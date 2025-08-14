@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>al-muqri'</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
+        font-family: sans-serif;
+        color: #2c3e50;
+        text-align: center;
+    }
+    h1 {
+        font-size: 2.5em;
+        color: #2bb6a3;
+        margin-top: 30px;
+    }
+    .play-btn {
+        width: 100px;
+        height: 100px;
+        border: 5px solid #2c3e50;
+        border-radius: 50%;
+        margin: 20px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .play-btn:hover {
+        background: #f4f4f4;
+    }
+    .icon-play {
+        width: 0;
+        height: 0;
+        border-left: 25px solid #2c3e50;
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+    }
+    .icon-pause {
+        display: flex;
+        gap: 6px;
+    }
+    .icon-pause div {
+        width: 8px;
+        height: 30px;
+        background: #2c3e50;
+    }
+    .dropdown-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+        position: relative;
+    }
+    .selected-text {
+        font-size: 1.2em;
+        border-bottom: 1px dashed #ccc;
+        padding: 5px;
+    }
+    .dropdown-btn {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        margin-left: 8px;
+    }
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 40px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        width: 250px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 10;
+    }
+    .dropdown-item {
+        padding: 12px;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    .dropdown-item:hover {
+        background: #f0f0f0;
+    }
+    .radio-circle {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #888;
+        border-radius: 50%;
+    }
+    .radio-selected {
+        background: #2bb6a3;
+        border-color: #2bb6a3;
+    }
+    .section-title {
+        font-size: 1em;
+        color: #2bb6a3;
+        margin-top: 20px;
+    }
+    .counter-group {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+    .counter {
+        margin: 10px 15px;
+        text-align: center;
+    }
+    .counter-title {
+        color: #2bb6a3;
+        font-size: 0.9em;
+        margin-bottom: 5px;
+    }
+    .counter button {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        color: #34495e;
+        cursor: pointer;
+        padding: 0 10px;
+    }
+    .counter span {
+        font-size: 1.2em;
+        display: inline-block;
+        width: 35px;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<h1>al-muqri'</h1>
+
+<div class="play-btn" id="playButton">
+    <div class="icon-play"></div>
+</div>
+
+<audio id="player" preload="auto">
+    <!-- Change this path to your real audio file -->
+    <source src="AUDIOOO-1.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Reciter dropdown -->
+<div class="dropdown-container">
+    <div id="selectedReciter" class="selected-text">Muhammad Ayyuub</div>
+    <button class="dropdown-btn" onclick="toggleDropdown()">&#9662;</button>
+    <div class="dropdown-menu" id="reciterMenu"></div>
+</div>
+
+<div class="section-title">surah & ayahs</div>
+<div>
+    <select style="font-size:1.2em; border:none; background:transparent; color:#34495e; outline:none;">
+        <option>1 - Al-Faatiha</option>
+    </select>
+</div>
+
+<div class="counter-group">
+    <div class="counter">
+        <div class="counter-title">all</div>
+        <button onclick="changeValue('all',-1)">-</button>
+        <span id="all">3</span>
+        <button onclick="changeValue('all',1)">+</button>
+    </div>
+    <div class="counter">
+        <div class="counter-title">ayah</div>
+        <button onclick="changeValue('ayah',-1)">-</button>
+        <span id="ayah">1</span>
+        <button onclick="changeValue('ayah',1)">+</button>
+    </div>
+    <div class="counter">
+        <div class="counter-title">ayah delay</div>
+        <button onclick="changeValue('delay',-1)">-</button>
+        <span id="delay">0x</span>
+        <button onclick="changeValue('delay',1)">+</button>
+    </div>
+</div>
+
+<script>
+const reciters = ["Al-Husari"];
+const menu = document.getElementById("reciterMenu");
+let selectedReciter = "Muhammad Ayyuub";
+let isPlaying = false;
+const player = document.getElementById("player");
+const playButton = document.getElementById("playButton");
+
+// playback control vars
+let repeatCount = parseInt(document.getElementById("all").innerText);
+let currentRepeat = 0;
+let ayahNumber = parseInt(document.getElementById("ayah").innerText);
+let ayahDelay = parseInt(document.getElementById("delay").innerText) || 0;
+
+// Reciter menu rendering
+function renderReciters() {
+    menu.innerHTML = "";
+    reciters.forEach(name => {
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+        const text = document.createElement("span");
+        text.innerText = name;
+        const circle = document.createElement("div");
+        circle.className = "radio-circle" + (name === selectedReciter ? " radio-selected" : "");
+        item.appendChild(text);
+        item.appendChild(circle);
+        item.onclick = () => {
+            selectedReciter = name;
+            document.getElementById("selectedReciter").innerText = name;
+            stopAndReset();
+            toggleDropdown();
+        };
+        menu.appendChild(item);
+    });
+}
+
+function toggleDropdown() {
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+    if (menu.style.display === "block") renderReciters();
+}
+
+// Counter change function
+function changeValue(id, delta) {
+    let el = document.getElementById(id);
+    let val = parseInt(el.innerText) || 0;
+    if (id === "delay") {
+        val += delta;
+        if (val < 0) val = 0;
+        el.innerText = val + "x";
+        ayahDelay = val;
+    } else {
+        val += delta;
+        if (val < 0) val = 0;
+        el.innerText = val;
+        if (id === "all") repeatCount = val;
+        if (id === "ayah") ayahNumber = val;
+    }
+    stopAndReset();
+}
+
+function stopAndReset() {
+    player.pause();
+    player.currentTime = 0;
+    isPlaying = false;
+    setPlayIcon();
+}
+
+// Play/Pause
+playButton.addEventListener("click", () => {
+    if (!isPlaying) {
+        currentRepeat = 1;
+        player.currentTime = 0;
+        player.play();
+        isPlaying = true;
+        setPauseIcon();
+    } else {
+        stopAndReset();
+    }
+});
+
+// Loop with delay logic
+player.addEventListener("ended", () => {
+    if (currentRepeat < repeatCount) {
+        currentRepeat++;
+        setTimeout(() => {
+            player.currentTime = 0;
+            player.play();
+        }, ayahDelay * 1000);
+    } else {
+        stopAndReset();
+    }
+});
+
+function setPlayIcon() {
+    playButton.innerHTML = `<div class="icon-play"></div>`;
+}
+function setPauseIcon() {
+    playButton.innerHTML = `<div class="icon-pause"><div></div><div></div></div>`;
+}
+
+// Close dropdown on outside click
+document.addEventListener("click", function(event) {
+    if (!event.target.closest(".dropdown-container")) {
+        menu.style.display = "none";
+    }
+});
+</script>
+
+</body>
+</html>
